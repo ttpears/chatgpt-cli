@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+  chatgpt-cli:
+    build: .
+    volumes:
+      - ./chatgpt.py:/app/chatgpt-cli/chatgpt.py
+      - ./.history:/app/chatgpt-cli/.history
+      - ./prompts:/app/chatgpt-cli/prompts
+    env_file:
+      - .env
+    stdin_open: true
+    tty: true

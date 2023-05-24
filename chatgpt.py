@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 import atexit
 import click
@@ -12,12 +12,11 @@ from prompt_toolkit import PromptSession, HTML
 from prompt_toolkit.history import FileHistory
 from rich.console import Console
 from rich.markdown import Markdown
+from dotenv import load_dotenv
 
 WORKDIR = Path(__file__).parent
-CONFIG_FILE = Path(WORKDIR, "config.yaml")
 HISTORY_FILE = Path(WORKDIR, ".history")
 BASE_ENDPOINT = "https://api.openai.com/v1"
-ENV_VAR = "OPENAI_API_KEY"
 
 PRICING_RATE = {
     "gpt-3.5-turbo": {"prompt": 0.002, "completion": 0.002},
@@ -36,13 +35,26 @@ completion_tokens = 0
 console = Console()
 
 
-def load_config(config_file: str) -> dict:
+def load_config() -> dict:
     """
-    Read a YAML config file and returns it's content as a dictionary
+    Use dotenv to define dict with configuration parameters
     """
-    with open(config_file) as file:
-        config = yaml.load(file, Loader=yaml.FullLoader)
-
+    load_dotenv()
+    config = {}
+    try:
+        if os.getenv("apikey"):
+            config['apikey'] = os.getenv("apikey")
+        if os.getenv("model"):
+            config['model'] = os.getenv("model")
+        if os.getenv("temperature"):
+            config['temperature'] = int(os.getenv("temperature"))
+        if os.getenv("max_tokens"):
+            config['max_tokens'] = int(os.getenv("max_tokens"))
+        if os.getenv("markdown"):
+            config['markdown'] = os.getenv("markdown")
+    except ValueError:
+        console.print("Invalid environment variables", style="bold red")
+        sys.exit(1)
     return config
 
 
@@ -95,7 +107,7 @@ def start_prompt(session: PromptSession, config: dict) -> None:
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {config['api-key']}",
+        "Authorization": f"Bearer {config['apikey']}",
     }
 
     message = session.prompt(HTML(f"<b>[{prompt_tokens + completion_tokens}] >>> </b>"))
@@ -156,6 +168,7 @@ def start_prompt(session: PromptSession, config: dict) -> None:
                 raise EOFError
                 # TODO: Develop a better strategy to manage this case
         console.print("Invalid request", style="bold red")
+        console.print(response)
         raise EOFError
 
     elif r.status_code == 401:
@@ -183,22 +196,13 @@ def start_prompt(session: PromptSession, config: dict) -> None:
 def main(context, api_key, model) -> None:
     history = FileHistory(HISTORY_FILE)
     session = PromptSession(history=history)
-
-    try:
-        config = load_config(CONFIG_FILE)
-    except FileNotFoundError:
-        console.print("Configuration file not found", style="red bold")
-        sys.exit(1)
+    config = load_config()
 
     # Order of precedence for API Key configuration:
-    # Command line option > Environment variable > Configuration file
-
-    # If the environment variable is set overwrite the configuration
-    if os.environ.get(ENV_VAR):
-        config["api-key"] = os.environ[ENV_VAR].strip()
-    # If the --key command line argument is used overwrite the configuration
+    # 1. Environment variable
+    # 2. Command line argument
     if api_key:
-        config["api-key"] = api_key.strip()
+        config["apikey"] = api_key.strip()
     # If the --model command line argument is used overwrite the configuration
     if model:
         config["model"] = model.strip()
