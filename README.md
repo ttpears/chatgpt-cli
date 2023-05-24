@@ -22,17 +22,16 @@ Clone the repository:
 
 `cd chatgpt-cli`
 
-Install the dependencies:
+Copy `.env.sample` to `.env`:
 
-`pip install -r requirements.txt`
+`cp .env.sample .env`
 
-After that, you need to configure your API Key. There are three alternative ways to provide this parameter:
+After that, you need to configure your API Key. There are two ways to provide this parameter:
 
-- Edit the `api-key` parameter in the *config.yaml* file
-- Set the environment variable `OPENAI_API_KEY` (Check your operating system's documentation on how to do this)
+- Edit the `apikey` parameter in the *.env* file
 - Use the command line option `--key` or `-k`
 
-If more then one API Key is provided, ChatGPT CLI follows this priority order: *Command line option > Environment variable > Configuration file*
+If more then one API Key is provided, ChatGPT CLI follows this priority order: *Command line option > Environment variable*
 
 ## Models
 
@@ -42,9 +41,11 @@ Check [this page](https://platform.openai.com/docs/models) for the technical det
 
 ## Basic usage
 
-Launch the *chatgpt.py* script (depending on your environment you may need to use the `python3` command instead of `python`):
+Launch the container:
 
-`python chatgpt.py`
+`docker compose run chatgpt-cli`
+
+This will drop you on a prompt, now you can run `./chatgpt.py`, optionally passing additional parameters.
 
 Then just chat! The number next to the prompt is the [tokens](https://platform.openai.com/tokenizer) used in the conversation at that point.
 
